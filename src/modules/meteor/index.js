@@ -71,7 +71,7 @@ export function setup(api) {
   return runTaskList(list, sessions);
 }
 
-export function push(api) {
+export function push(api, sessions, skipBuild) {
   log('exec => mup meteor push');
   const config = api.getConfig().meteor;
   if (!config) {
@@ -95,7 +95,7 @@ export function push(api) {
   var bundlePath = path.resolve(buildOptions.buildLocation, 'bundle.tar.gz');
   const appPath = path.resolve(api.getBasePath(), config.path);
 
-  return buildApp(appPath, buildOptions)
+  return (skipBuild ? Promise.resolve() : buildApp(appPath, buildOptions))
     .then(() => {
       config.log = config.log || {
         opts: {
@@ -125,12 +125,12 @@ export function push(api) {
         }
       });
 
-      const sessions = api.getSessions([ 'meteor' ]);
+      sessions = sessions || api.getSessions([ 'meteor' ]);
       return runTaskList(list, sessions);
     });
 }
 
-export function envconfig(api) {
+export function envconfig(api, sessions) {
   log('exec => mup meteor envconfig');
   const config = api.getConfig().meteor;
   if (!config) {
@@ -138,7 +138,7 @@ export function envconfig(api) {
     process.exit(1);
   }
 
-  const sessions = api.getSessions([ 'meteor' ]);
+  sessions = sessions || api.getSessions([ 'meteor' ]);
 
   const tasks = sessions.map((session) => {
     const list = nodemiral.taskList('Configuring  Meteor Environment Variables');
@@ -167,7 +167,7 @@ export function envconfig(api) {
   return Promise.all(tasks);
 }
 
-export function start(api) {
+export function start(api, sessions) {
   log('exec => mup meteor start');
   const config = api.getConfig().meteor;
   if (!config) {
@@ -193,7 +193,7 @@ export function start(api) {
     }
   });
 
-  const sessions = api.getSessions([ 'meteor' ]);
+  sessions = sessions || api.getSessions([ 'meteor' ]);
   return runTaskList(list, sessions, {series: true});
 }
 
@@ -205,12 +205,22 @@ export function deploy(api) {
     process.exit(1);
   }
 
-  return push(api)
-    .then(() => envconfig(api))
-    .then(() => start(api));
+  const sessions = api.getSessions([ 'meteor' ]);
+
+  const tasks = sessions.map((session, i) => {
+    return function () {
+      return push(api, [session], !!i)
+        .then(() => envconfig(api, [session]))
+        .then(() => start(api, [session]));
+    }
+  });
+
+  return tasks.reduce(function(cur, next) {
+      return cur.then(next);
+  }, Promise.resolve());
 }
 
-export function stop(api) {
+export function stop(api, sessions) {
   log('exec => mup meteor stop');
   const config = api.getConfig().meteor;
   if (!config) {
@@ -227,6 +237,28 @@ export function stop(api) {
     }
   });
 
-  const sessions = api.getSessions([ 'meteor' ]);
+  sessions = sessions || api.getSessions([ 'meteor' ]);
   return runTaskList(list, sessions);
+}
+
+export function restart (api) {
+  log('exec => mup meteor restart');
+  const config = api.getConfig().meteor;
+  if (!config) {
+    console.error('error: no configs found for meteor');
+    process.exit(1);
+  }
+
+  const sessions = api.getSessions([ 'meteor' ]);
+
+  const tasks = sessions.map((session, i) => {
+    return function () {
+      return stop(api, [session])
+        .then(() => start(api, [session]));
+    }
+  });
+
+  return tasks.reduce(function(cur, next) {
+      return cur.then(next);
+  }, Promise.resolve());
 }

@@ -42,8 +42,7 @@ export function reconfig(api) {
 
 export function restart(api) {
   log('exec => mup restart');
-  return meteor.stop(api)
-    .then(() => meteor.start(api));
+  return meteor.restart(api);
 }
 
 export function setup(api) {
