@@ -44,6 +44,8 @@ docker run \
     --volume=/opt/$APPNAME/config/private.key:/private.key \
     --link=$APPNAME:backend \
     --publish=<%= sslConfig.port %>:443 \
+    <% if(logConfig && logConfig.driver)  { %>--log-driver=<%= logConfig.driver %> <% } %>\
+    <% for(var option in logConfig.opts) { %>--log-opt <%= option %>=<%= logConfig.opts[option] %> <% } %>\
     --name=$APPNAME-frontend \
     meteorhacks/mup-frontend-server /start.sh
 <% } %>

@@ -36,8 +36,7 @@ export function logs(api) {
 
 export function reconfig(api) {
   log('exec => mup reconfig');
-  return meteor.envconfig(api)
-    .then(() => meteor.start(api));
+  return meteor.reconfig(api);
 }
 
 export function restart(api) {

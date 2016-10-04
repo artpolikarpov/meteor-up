@@ -34,41 +34,47 @@ export function setup(api) {
     process.exit(1);
   }
 
-  const list = nodemiral.taskList('Setup Meteor');
+  const sessions = api.getSessions([ 'meteor' ]);
 
-  list.executeScript('Setup Environment', {
-    script: path.resolve(__dirname, 'assets/meteor-setup.sh'),
-    vars: {
-      name: config.name,
-    },
-  });
+  const tasks = sessions.map((session) => {
+    const list = nodemiral.taskList('Setup Meteor');
 
-  if (config.ssl) {
-    const basePath = api.getBasePath();
+    list.executeScript('Setup Environment', {
+      script: path.resolve(__dirname, 'assets/meteor-setup.sh'),
+      vars: {
+        name: config.name,
+      },
+    });
 
-    if (config.ssl.upload !== false) {
-      list.copy('Copying SSL Certificate Bundle', {
-        src: path.resolve(basePath, config.ssl.crt),
-        dest: '/opt/' + config.name + '/config/bundle.crt'
-      });
+    if (config.ssl) {
+      const basePath = api.getBasePath();
 
-      list.copy('Copying SSL Private Key', {
-        src: path.resolve(basePath, config.ssl.key),
-        dest: '/opt/' + config.name + '/config/private.key'
+      if (config.ssl.upload !== false) {
+        list.copy('Copying SSL Certificate Bundle', {
+          src: path.resolve(basePath, config.ssl.crt),
+          dest: '/opt/' + config.name + '/config/bundle.crt'
+        });
+
+        list.copy('Copying SSL Private Key', {
+          src: path.resolve(basePath, config.ssl.key),
+          dest: '/opt/' + config.name + '/config/private.key'
+        });
+      }
+
+      list.executeScript('Verifying SSL Configurations', {
+        script: path.resolve(__dirname, 'assets/verify-ssl-config.sh'),
+        vars: {
+          name: config.name
+        },
       });
     }
 
-    list.executeScript('Verifying SSL Configurations', {
-      script: path.resolve(__dirname, 'assets/verify-ssl-config.sh'),
-      vars: {
-        name: config.name
-      },
-    });
-  }
+    return runTaskList(list, session);
+  });
 
-  const sessions = api.getSessions([ 'meteor' ]);
-
-  return runTaskList(list, sessions);
+  return tasks.reduce(function(cur, next) {
+      return cur.then(next);
+  }, Promise.resolve());
 }
 
 export function push(api, sessions, skipBuild) {
@@ -90,7 +96,7 @@ export function push(api, sessions, skipBuild) {
   var buildOptions = config.buildOptions || {};
   buildOptions.buildLocation = buildOptions.buildLocation || path.resolve('/tmp', uuid.v4());
 
-  console.log('Building App Bundle Locally');
+  skipBuild || console.log('Building App Bundle Locally');
 
   var bundlePath = path.resolve(buildOptions.buildLocation, 'bundle.tar.gz');
   const appPath = path.resolve(api.getBasePath(), config.path);
@@ -164,7 +170,9 @@ export function envconfig(api, sessions) {
     return runTaskList(list, session);
   });
 
-  return Promise.all(tasks);
+  return tasks.reduce(function(cur, next) {
+      return cur.then(next);
+  }, Promise.resolve());
 }
 
 export function start(api, sessions) {
@@ -239,6 +247,28 @@ export function stop(api, sessions) {
 
   sessions = sessions || api.getSessions([ 'meteor' ]);
   return runTaskList(list, sessions);
+}
+
+export function reconfig (api) {
+  log('exec => mup meteor reconfig');
+  const config = api.getConfig().meteor;
+  if (!config) {
+    console.error('error: no configs found for meteor');
+    process.exit(1);
+  }
+
+  const sessions = api.getSessions([ 'meteor' ]);
+
+  const tasks = sessions.map((session, i) => {
+    return function () {
+      return envconfig(api, [session])
+        .then(() => start(api, [session]));
+    }
+  });
+
+  return tasks.reduce(function(cur, next) {
+      return cur.then(next);
+  }, Promise.resolve());
 }
 
 export function restart (api) {
