@@ -1,5 +1,12 @@
 # meteor-up [![Stories in Ready](https://badge.waffle.io/kadirahq/meteor-up.svg?label=ready&title=Ready)](http://waffle.io/kadirahq/meteor-up)
 
+**Don’t use! No tests here!**
+
+It is a monkey-patched fork of https://github.com/kadirahq/meteor-up for custom Chatra’s need. We fix some issues we’ve faced with original package.
+
+All works like in original `mup` but with `chup` command.
+
+
 #### Production Quality Meteor Deployments
 
 Meteor Up is a command line tool that allows you to deploy any [Meteor](http://meteor.com) app to your own server. It currently supports Ubuntu.
