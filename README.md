@@ -302,7 +302,7 @@ Now, simply do `mup setup` and then `mup deploy`. Now your app is running with a
 
 If your certificate and key are already at the right location on your server and you would like to prevent Mup to override them while still needing an SSL setup, you can add `upload: false` to `mup.js` in the `meteor.ssl` object.
 
-To learn more about the SSL setup refer to the [`mup-frontend-server`](https://github.com/meteorhacks/mup-frontend-server) project.
+To learn more about the SSL setup refer to the [`mup-frontend-server`](https://github.com/artpolikarpov/mup-frontend-server) project.
 
 ### Updating Mup
 

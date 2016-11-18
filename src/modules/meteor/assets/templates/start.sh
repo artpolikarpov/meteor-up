@@ -35,7 +35,7 @@ docker run \
 <% if(typeof sslConfig === "object")  { %>
   # We don't need to fail the deployment because of a docker hub downtime
   set +e
-  docker pull meteorhacks/mup-frontend-server:latest
+  docker pull artpolikarpov/mup-frontend-server:latest
   set -e
   docker run \
     -d \
@@ -47,5 +47,5 @@ docker run \
     <% if(logConfig && logConfig.driver)  { %>--log-driver=<%= logConfig.driver %> <% } %>\
     <% for(var option in logConfig.opts) { %>--log-opt <%= option %>=<%= logConfig.opts[option] %> <% } %>\
     --name=$APPNAME-frontend \
-    meteorhacks/mup-frontend-server /start.sh
+    artpolikarpov/mup-frontend-server /start.sh
 <% } %>
