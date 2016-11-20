@@ -114,12 +114,13 @@ export function push(api, sessions, skipBuild) {
       list.copy('Pushing Meteor App Bundle to The Server', {
         src: bundlePath,
         dest: '/opt/' + config.name + '/tmp/bundle.tar.gz',
-        progressBar: config.enableUploadProgressBar
+        progressBar: true
       });
 
       list.copy('Pushing the Startup Script', {
         src: path.resolve(__dirname, 'assets/templates/start.sh'),
         dest: '/opt/' + config.name + '/config/start.sh',
+        progressBar: true,
         vars: {
           appName: config.name,
           useLocalMongo: api.getConfig().mongo ? 1 : 0,
@@ -161,6 +162,7 @@ export function envconfig(api, sessions) {
     list.copy('Sending Environment Variables', {
       src: path.resolve(__dirname, 'assets/templates/env.list'),
       dest: '/opt/' + config.name + '/config/env.list',
+      progressBar: true,
       vars: {
         env: env || {},
         appName: config.name

@@ -1,6 +1,6 @@
 {
   "name": "chup",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Production Quality Meteor Deployments (for Chatra only)",
   "main": "lib/index.js",
   "bin": {
